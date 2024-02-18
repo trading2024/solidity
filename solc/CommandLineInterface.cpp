@@ -1209,7 +1209,7 @@ void CommandLineInterface::assembleYul(yul::YulStack::Language _language, yul::Y
 		{
 			auto const& result = stack.parserResult();
 			if (result && !result->checkSourceIndices())
-				solThrow(CommandLineExecutionError, "Assembly Import Error: source indices where incomplete. Please check @use-src attributes in your yul files.");
+				solThrow(CommandLineExecutionError, "Yul validation error: source indices where incomplete. Please check @use-src attributes.");
 		}
 	}
 
