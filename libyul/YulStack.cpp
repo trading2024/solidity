@@ -326,7 +326,8 @@ Json::Value YulStack::assemblyJson() const
 
 	yulAssert(m_parserResult);
 	yulAssert(m_parserResult->debugData);
-	std::map<std::string, unsigned> yulSourceIndices = sourceIndices(*m_parserResult);
+	std::map<std::string, unsigned> yulSourceIndices;
+	m_parserResult->collectSourceIndices(yulSourceIndices);
 	// If sourceIndices are empty, there were no source locations annotated in the yul source.
 	// In this case, we just add the filename of the yul file itself.
 	if (yulSourceIndices.empty())
@@ -343,25 +344,4 @@ std::shared_ptr<Object> YulStack::parserResult() const
 	yulAssert(m_parserResult, "");
 	yulAssert(m_parserResult->code, "");
 	return m_parserResult;
-}
-
-std::map<std::string, unsigned> YulStack::sourceIndices(yul::Object const& _object)
-{
-	std::map<std::string, unsigned> yulSourceIndices;
-
-	auto registerSourceIndex = [&](std::string const& _name, unsigned _index) {
-		solAssert(yulSourceIndices.count(_name) == 0 || yulSourceIndices[_name] == _index);
-		yulSourceIndices[_name] = _index;
-	};
-
-	if (_object.debugData && _object.debugData->sourceNames.has_value())
-		for (auto const& [index, sourceName]: *_object.debugData->sourceNames)
-			registerSourceIndex(*sourceName, index);
-
-	for (auto const& subNode: _object.subObjects)
-		if (auto const* subObject = dynamic_cast<yul::Object const*>(subNode.get()))
-			for (auto const& [name, index]: sourceIndices(*subObject))
-				registerSourceIndex(name, index);
-
-	return yulSourceIndices;
 }
