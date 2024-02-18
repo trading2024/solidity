@@ -16,7 +16,7 @@
 */
 // SPDX-License-Identifier: GPL-3.0
 /**
- * Full assembly stack that can support EVM-assembly and Yul as input and EVM, EVM1.5
+ * Full assembly stack that can support Yul as input.
  */
 
 
@@ -238,11 +238,16 @@ YulStack::assembleWithDeployed(std::optional<std::string_view> _deployName) cons
 		)
 	);
 
+	std::map<std::string, unsigned> sourceIndices;
+	m_parserResult->collectSourceIndices(sourceIndices);
+	creationObject.assemblyJson = creationAssembly->assemblyJSON(sourceIndices);
+
 	MachineAssemblyObject deployedObject;
 	if (deployedAssembly)
 	{
 		deployedObject.bytecode = std::make_shared<evmasm::LinkerObject>(deployedAssembly->assemble());
 		deployedObject.assembly = deployedAssembly->assemblyString(m_debugInfoSelection);
+		deployedObject.assemblyJson = deployedAssembly->assemblyJSON(sourceIndices);
 		deployedObject.sourceMappings = std::make_unique<std::string>(
 			evmasm::AssemblyItem::computeSourceMapping(
 				deployedAssembly->items(),
@@ -317,25 +322,6 @@ Json YulStack::astJson() const
 	yulAssert(m_parserResult, "");
 	yulAssert(m_parserResult->code, "");
 	return  m_parserResult->toJson();
-}
-
-Json::Value YulStack::assemblyJson() const
-{
-	yulAssert(assembleEVMWithDeployed().first);
-	std::shared_ptr<evmasm::Assembly> assembly{assembleEVMWithDeployed().first};
-
-	yulAssert(m_parserResult);
-	yulAssert(m_parserResult->debugData);
-	std::map<std::string, unsigned> yulSourceIndices;
-	m_parserResult->collectSourceIndices(yulSourceIndices);
-	// If sourceIndices are empty, there were no source locations annotated in the yul source.
-	// In this case, we just add the filename of the yul file itself.
-	if (yulSourceIndices.empty())
-	{
-		yulAssert(m_charStream);
-		yulSourceIndices[m_charStream->name()] = 0;
-	}
-	return assembly->assemblyJSON(yulSourceIndices);
 }
 
 std::shared_ptr<Object> YulStack::parserResult() const
