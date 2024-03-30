@@ -1026,6 +1026,18 @@ BOOST_AUTO_TEST_CASE(peephole_double_push)
 		u256(4),
 		u256(5)
 	};
+
+	// `PUSH0 PUSH0` is cheaper than `DUP1 PUSH0`
+	if (solidity::test::CommonOptions::get().evmVersion() >= EVMVersion::shanghai())
+		expectation = {
+			u256(0),
+			u256(0),
+			u256(5),
+			Instruction::DUP1,
+			u256(4),
+			u256(5)
+		};
+
 	PeepholeOptimiser peepOpt(items, solidity::test::CommonOptions::get().evmVersion());
 	BOOST_REQUIRE(peepOpt.optimise());
 	BOOST_CHECK_EQUAL_COLLECTIONS(
@@ -1907,9 +1919,10 @@ BOOST_AUTO_TEST_CASE(inliner_revert)
 	);
 }
 
-BOOST_AUTO_TEST_CASE(inliner_revert_increased_datagas)
+BOOST_AUTO_TEST_CASE(inliner_revert_push0)
 {
-	// Inlining this would increase data gas (5 bytes v/s 4 bytes), therefore, skipped.
+	// Inlining this without PUSH0 would increase data gas (5 bytes v/s 4 bytes), therefore, it would be skipped.
+	// However, with PUSH0 it is inlined (3 bytes vs 4 bytes).
 	AssemblyItems items{
 		AssemblyItem(PushTag, 1),
 		Instruction::JUMP,
@@ -1918,8 +1931,16 @@ BOOST_AUTO_TEST_CASE(inliner_revert_increased_datagas)
 		u256(0),
 		Instruction::REVERT
 	};
+	AssemblyItems expectation{
+		u256(0),
+		u256(0),
+		Instruction::REVERT,
+		AssemblyItem(Tag, 1),
+		u256(0),
+		u256(0),
+		Instruction::REVERT
+	};
 
-	AssemblyItems expectation = items;
 	Inliner{items, {}, Assembly::OptimiserSettings{}.expectedExecutionsPerDeployment, false, {}}.optimise();
 	BOOST_CHECK_EQUAL_COLLECTIONS(
 		items.begin(), items.end(),
