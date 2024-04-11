@@ -50,6 +50,14 @@ parse(std::string const& _source, bool _yul = true);
 std::pair<std::shared_ptr<Object>, std::shared_ptr<AsmAnalysisInfo>>
 parse(std::string const& _source, Dialect const& _dialect, langutil::ErrorList& _errors);
 
+std::pair<std::shared_ptr<Object>, std::shared_ptr<AsmAnalysisInfo>> parse(
+	std::ostream& _stream,
+	std::string const& _linePrefix,
+	bool const _formatted,
+	std::string const& _source,
+	Dialect const& _dialect
+);
+
 Block disambiguate(std::string const& _source, bool _yul = true);
 std::string format(std::string const& _source, bool _yul = true);
 
