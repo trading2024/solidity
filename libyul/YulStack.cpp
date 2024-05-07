@@ -239,15 +239,19 @@ YulStack::assembleWithDeployed(std::optional<std::string_view> _deployName) cons
 	);
 
 	std::map<std::string, unsigned> sourceIndices;
-	m_parserResult->collectSourceIndices(sourceIndices);
-	creationObject.assemblyJson = creationAssembly->assemblyJSON(sourceIndices);
+	if (m_requestAsmJsonOutput)
+	{
+		m_parserResult->collectSourceIndices(sourceIndices);
+		creationObject.assemblyJson = creationAssembly->assemblyJSON(sourceIndices);
+	}
 
 	MachineAssemblyObject deployedObject;
 	if (deployedAssembly)
 	{
 		deployedObject.bytecode = std::make_shared<evmasm::LinkerObject>(deployedAssembly->assemble());
 		deployedObject.assembly = deployedAssembly->assemblyString(m_debugInfoSelection);
-		deployedObject.assemblyJson = deployedAssembly->assemblyJSON(sourceIndices);
+		if (m_requestAsmJsonOutput)
+			deployedObject.assemblyJson = deployedAssembly->assemblyJSON(sourceIndices);
 		deployedObject.sourceMappings = std::make_unique<std::string>(
 			evmasm::AssemblyItem::computeSourceMapping(
 				deployedAssembly->items(),
@@ -330,4 +334,9 @@ std::shared_ptr<Object> YulStack::parserResult() const
 	yulAssert(m_parserResult, "");
 	yulAssert(m_parserResult->code, "");
 	return m_parserResult;
+}
+
+void YulStack::requestAsmJsonOutput(bool _asmJsonOutput)
+{
+	m_requestAsmJsonOutput = _asmJsonOutput;
 }
