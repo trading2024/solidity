@@ -120,7 +120,17 @@ void CommonSubexpressionEliminator::visit(Expression& _e)
 				// We check for syntactic equality again because the value might have changed.
 				if (inScope(variable) && SyntacticallyEqual{}(_e, *value->value))
 				{
-					_e = Identifier{debugDataOf(_e), variable};
+					Json debugDataAttributes = Json::array();
+					if (debugDataOf(*value->value))
+						debugDataAttributes.emplace_back(debugDataOf(*value->value)->attributes);
+					if (debugDataOf(_e))
+					{
+						debugDataAttributes.emplace_back(debugDataOf(_e)->attributes);
+						if (!debugDataAttributes.empty())
+							_e = Identifier{langutil::DebugData::create(debugDataOf(_e)->nativeLocation, debugDataOf(_e)->originLocation, debugDataOf(_e)->astID, debugDataAttributes), variable};
+						else
+							_e = Identifier{debugDataOf(_e), variable};
+					}
 					break;
 				}
 			}
