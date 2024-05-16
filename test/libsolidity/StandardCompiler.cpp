@@ -383,7 +383,7 @@ BOOST_AUTO_TEST_CASE(basic_compilation)
 	BOOST_CHECK(contract["evm"]["bytecode"].is_object());
 	BOOST_CHECK(contract["evm"]["bytecode"]["object"].is_string());
 	BOOST_CHECK_EQUAL(
-		solidity::test::bytecodeSansMetadata(contract["evm"]["bytecode"]["object"].asString()),
+		solidity::test::bytecodeSansMetadata(contract["evm"]["bytecode"]["object"].get<std::string>()),
 		std::string("6080604052348015600e575f5ffd5b5060") +
 		(VersionIsRelease ? "3e" : util::toHex(bytes{uint8_t(60 + VersionStringStrict.size())})) +
 		"80601a5f395ff3fe60806040525f5ffdfe"

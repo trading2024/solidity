@@ -49,10 +49,10 @@ contract test {
 }
 // ----
 // constructor()
-// gas irOptimized: 95303
-// gas irOptimized code: 520000
-// gas legacy: 126106
-// gas legacy code: 930200
+// gas irOptimized: 95223
+// gas irOptimized code: 519000
+// gas legacy: 126250
+// gas legacy code: 931400
 // gas legacyOptimized: 102639
 // gas legacyOptimized code: 612400
 // toSlice(string): 0x20, 11, "hello world" -> 11, 0xa0
@@ -73,5 +73,5 @@ contract test {
 // gas legacyOptimized: 27914
 // benchmark(string,bytes32): 0x40, 0x0842021, 8, "solidity" -> 0x2020
 // gas irOptimized: 1976778
-// gas legacy: 4233999
-// gas legacyOptimized: 2318670
+// gas legacy: 4234020
+// gas legacyOptimized: 2318668
