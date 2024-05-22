@@ -59,7 +59,6 @@ Dialect const& languageToDialect(YulStack::Language _language, EVMVersion _versi
 
 }
 
-
 CharStream const& YulStack::charStream(std::string const& _sourceName) const
 {
 	yulAssert(m_charStream, "");
@@ -226,7 +225,7 @@ YulStack::assembleWithDeployed(std::optional<std::string_view> _deployName) cons
 	MachineAssemblyObject creationObject;
 	creationObject.bytecode = std::make_shared<evmasm::LinkerObject>(creationAssembly->assemble());
 	yulAssert(creationObject.bytecode->immutableReferences.empty(), "Leftover immutables.");
-	creationObject.assembly = creationAssembly->assemblyString(m_debugInfoSelection);
+	creationObject.assembly = creationAssembly;
 	creationObject.sourceMappings = std::make_unique<std::string>(
 		evmasm::AssemblyItem::computeSourceMapping(
 			creationAssembly->items(),
@@ -234,20 +233,11 @@ YulStack::assembleWithDeployed(std::optional<std::string_view> _deployName) cons
 		)
 	);
 
-	std::map<std::string, unsigned> sourceIndices;
-	if (m_requestAsmJsonOutput)
-	{
-		m_parserResult->collectSourceIndices(sourceIndices);
-		creationObject.assemblyJson = creationAssembly->assemblyJSON(sourceIndices);
-	}
-
 	MachineAssemblyObject deployedObject;
 	if (deployedAssembly)
 	{
 		deployedObject.bytecode = std::make_shared<evmasm::LinkerObject>(deployedAssembly->assemble());
-		deployedObject.assembly = deployedAssembly->assemblyString(m_debugInfoSelection);
-		if (m_requestAsmJsonOutput)
-			deployedObject.assemblyJson = deployedAssembly->assemblyJSON(sourceIndices);
+		deployedObject.assembly = deployedAssembly;
 		deployedObject.sourceMappings = std::make_unique<std::string>(
 			evmasm::AssemblyItem::computeSourceMapping(
 				deployedAssembly->items(),
@@ -330,9 +320,4 @@ std::shared_ptr<Object> YulStack::parserResult() const
 	yulAssert(m_parserResult, "");
 	yulAssert(m_parserResult->code, "");
 	return m_parserResult;
-}
-
-void YulStack::requestAsmJsonOutput(bool _asmJsonOutput)
-{
-	m_requestAsmJsonOutput = _asmJsonOutput;
 }
