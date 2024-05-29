@@ -687,12 +687,32 @@ bool CompilerStack::parseAndAnalyze(State _stopAfter)
 {
 	m_stopAfter = _stopAfter;
 
-	bool success = parse();
-	if (m_stackState >= m_stopAfter)
+	try
+	{
+		bool success = parse();
+		if (m_stackState >= m_stopAfter)
+			return success;
+		if (success)
+			success = analyze();
 		return success;
-	if (success)
-		success = analyze();
-	return success;
+	}
+	catch (UnimplementedFeatureError const& _unimplementedError)
+	{
+		SourceLocation errorSourceLocation{};
+		if (
+			SourceLocation const* sourceLocation =
+			boost::get_error_info<langutil::errinfo_sourceLocation>(_unimplementedError)
+		)
+			errorSourceLocation = *sourceLocation;
+
+		std::string const* comment = _unimplementedError.comment();
+		m_errorReporter.unimplementedFeatureError(
+			7053_error,
+			errorSourceLocation,
+			(comment && !comment->empty()) ? *comment : ""
+		);
+		return false;
+	}
 }
 
 bool CompilerStack::isRequestedSource(std::string const& _sourceName) const
@@ -763,26 +783,20 @@ bool CompilerStack::compile(State _stopAfter)
 					}
 					catch (UnimplementedFeatureError const& _unimplementedError)
 					{
+						SourceLocation errorSourceLocation{};
 						if (
 							SourceLocation const* sourceLocation =
 							boost::get_error_info<langutil::errinfo_sourceLocation>(_unimplementedError)
 						)
-						{
-							std::string const* comment = _unimplementedError.comment();
-							m_errorReporter.error(
-								1834_error,
-								Error::Type::CodeGenerationError,
-								*sourceLocation,
-								fmt::format(
-									"Unimplemented feature error {} in {}",
-									(comment && !comment->empty()) ? ": " + *comment : "",
-									_unimplementedError.lineInfo()
-								)
-							);
-							return false;
-						}
-						else
-							throw;
+							errorSourceLocation = *sourceLocation;
+
+						std::string const* comment = _unimplementedError.comment();
+						m_errorReporter.unimplementedFeatureError(
+							1834_error,
+							errorSourceLocation,
+							(comment && !comment->empty()) ? *comment : ""
+						);
+						return false;
 					}
 				}
 	m_stackState = CompilationSuccessful;

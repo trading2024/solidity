@@ -1473,9 +1473,6 @@ Json StandardCompiler::compileSolidity(StandardCompiler::InputsAndSettings _inpu
 
 	Json output;
 
-	if (errors.size() > 0)
-		output["errors"] = std::move(errors);
-
 	if (!compilerStack.unhandledSMTLib2Queries().empty())
 		for (std::string const& query: compilerStack.unhandledSMTLib2Queries())
 			output["auxiliaryInputRequested"]["smtlib2queries"]["0x" + util::keccak256(query).hex()] = query;
@@ -1504,94 +1501,109 @@ Json StandardCompiler::compileSolidity(StandardCompiler::InputsAndSettings _inpu
 		std::string file = contractName.substr(0, colon);
 		std::string name = contractName.substr(colon + 1);
 
-		// ABI, storage layout, documentation and metadata
-		Json contractData;
-		if (isArtifactRequested(_inputsAndSettings.outputSelection, file, name, "abi", wildcardMatchesExperimental))
-			contractData["abi"] = compilerStack.contractABI(contractName);
-		if (isArtifactRequested(_inputsAndSettings.outputSelection, file, name, "storageLayout", false))
-			contractData["storageLayout"] = compilerStack.storageLayout(contractName);
-		if (isArtifactRequested(_inputsAndSettings.outputSelection, file, name, "metadata", wildcardMatchesExperimental))
-			contractData["metadata"] = compilerStack.metadata(contractName);
-		if (isArtifactRequested(_inputsAndSettings.outputSelection, file, name, "userdoc", wildcardMatchesExperimental))
-			contractData["userdoc"] = compilerStack.natspecUser(contractName);
-		if (isArtifactRequested(_inputsAndSettings.outputSelection, file, name, "devdoc", wildcardMatchesExperimental))
-			contractData["devdoc"] = compilerStack.natspecDev(contractName);
-
-		// IR
-		if (compilationSuccess && isArtifactRequested(_inputsAndSettings.outputSelection, file, name, "ir", wildcardMatchesExperimental))
-			contractData["ir"] = compilerStack.yulIR(contractName);
-		if (compilationSuccess && isArtifactRequested(_inputsAndSettings.outputSelection, file, name, "irAst", wildcardMatchesExperimental))
-			contractData["irAst"] = compilerStack.yulIRAst(contractName);
-		if (compilationSuccess && isArtifactRequested(_inputsAndSettings.outputSelection, file, name, "irOptimized", wildcardMatchesExperimental))
-			contractData["irOptimized"] = compilerStack.yulIROptimized(contractName);
-		if (compilationSuccess && isArtifactRequested(_inputsAndSettings.outputSelection, file, name, "irOptimizedAst", wildcardMatchesExperimental))
-			contractData["irOptimizedAst"] = compilerStack.yulIROptimizedAst(contractName);
-
-		// EVM
-		Json evmData;
-		if (compilationSuccess && isArtifactRequested(_inputsAndSettings.outputSelection, file, name, "evm.assembly", wildcardMatchesExperimental))
-			evmData["assembly"] = compilerStack.assemblyString(contractName, sourceList);
-		if (compilationSuccess && isArtifactRequested(_inputsAndSettings.outputSelection, file, name, "evm.legacyAssembly", wildcardMatchesExperimental))
-			evmData["legacyAssembly"] = compilerStack.assemblyJSON(contractName);
-		if (isArtifactRequested(_inputsAndSettings.outputSelection, file, name, "evm.methodIdentifiers", wildcardMatchesExperimental))
-			evmData["methodIdentifiers"] = compilerStack.interfaceSymbols(contractName)["methods"];
-		if (compilationSuccess && isArtifactRequested(_inputsAndSettings.outputSelection, file, name, "evm.gasEstimates", wildcardMatchesExperimental))
-			evmData["gasEstimates"] = compilerStack.gasEstimates(contractName);
-
-		if (compilationSuccess && isArtifactRequested(
-			_inputsAndSettings.outputSelection,
-			file,
-			name,
-			evmObjectComponents("bytecode"),
-			wildcardMatchesExperimental
-		))
-			evmData["bytecode"] = collectEVMObject(
-				_inputsAndSettings.evmVersion,
-				compilerStack.object(contractName),
-				compilerStack.sourceMapping(contractName),
-				compilerStack.generatedSources(contractName),
-				false,
-				[&](std::string const& _element) { return isArtifactRequested(
-					_inputsAndSettings.outputSelection,
-					file,
-					name,
-					"evm.bytecode." + _element,
-					wildcardMatchesExperimental
-				); }
-			);
-
-		if (compilationSuccess && isArtifactRequested(
-			_inputsAndSettings.outputSelection,
-			file,
-			name,
-			evmObjectComponents("deployedBytecode"),
-			wildcardMatchesExperimental
-		))
-			evmData["deployedBytecode"] = collectEVMObject(
-				_inputsAndSettings.evmVersion,
-				compilerStack.runtimeObject(contractName),
-				compilerStack.runtimeSourceMapping(contractName),
-				compilerStack.generatedSources(contractName, true),
-				true,
-				[&](std::string const& _element) { return isArtifactRequested(
-					_inputsAndSettings.outputSelection,
-					file,
-					name,
-					"evm.deployedBytecode." + _element,
-					wildcardMatchesExperimental
-				); }
-			);
-
-		if (!evmData.empty())
-			contractData["evm"] = evmData;
-
-		if (!contractData.empty())
+		try
 		{
-			if (!contractsOutput.contains(file))
-				contractsOutput[file] = Json::object();
-			contractsOutput[file][name] = contractData;
+			// ABI, storage layout, documentation and metadata
+			Json contractData;
+			if (isArtifactRequested(_inputsAndSettings.outputSelection, file, name, "abi", wildcardMatchesExperimental))
+				contractData["abi"] = compilerStack.contractABI(contractName);
+			if (isArtifactRequested(_inputsAndSettings.outputSelection, file, name, "storageLayout", false))
+				contractData["storageLayout"] = compilerStack.storageLayout(contractName);
+			if (isArtifactRequested(_inputsAndSettings.outputSelection, file, name, "metadata", wildcardMatchesExperimental))
+				contractData["metadata"] = compilerStack.metadata(contractName);
+			if (isArtifactRequested(_inputsAndSettings.outputSelection, file, name, "userdoc", wildcardMatchesExperimental))
+				contractData["userdoc"] = compilerStack.natspecUser(contractName);
+			if (isArtifactRequested(_inputsAndSettings.outputSelection, file, name, "devdoc", wildcardMatchesExperimental))
+				contractData["devdoc"] = compilerStack.natspecDev(contractName);
+
+			// IR
+			if (compilationSuccess && isArtifactRequested(_inputsAndSettings.outputSelection, file, name, "ir", wildcardMatchesExperimental))
+				contractData["ir"] = compilerStack.yulIR(contractName);
+			if (compilationSuccess && isArtifactRequested(_inputsAndSettings.outputSelection, file, name, "irAst", wildcardMatchesExperimental))
+				contractData["irAst"] = compilerStack.yulIRAst(contractName);
+			if (compilationSuccess && isArtifactRequested(_inputsAndSettings.outputSelection, file, name, "irOptimized", wildcardMatchesExperimental))
+				contractData["irOptimized"] = compilerStack.yulIROptimized(contractName);
+			if (compilationSuccess && isArtifactRequested(_inputsAndSettings.outputSelection, file, name, "irOptimizedAst", wildcardMatchesExperimental))
+				contractData["irOptimizedAst"] = compilerStack.yulIROptimizedAst(contractName);
+
+			// EVM
+			Json evmData;
+			if (compilationSuccess && isArtifactRequested(_inputsAndSettings.outputSelection, file, name, "evm.assembly", wildcardMatchesExperimental))
+				evmData["assembly"] = compilerStack.assemblyString(contractName, sourceList);
+			if (compilationSuccess && isArtifactRequested(_inputsAndSettings.outputSelection, file, name, "evm.legacyAssembly", wildcardMatchesExperimental))
+				evmData["legacyAssembly"] = compilerStack.assemblyJSON(contractName);
+			if (isArtifactRequested(_inputsAndSettings.outputSelection, file, name, "evm.methodIdentifiers", wildcardMatchesExperimental))
+				evmData["methodIdentifiers"] = compilerStack.interfaceSymbols(contractName)["methods"];
+			if (compilationSuccess && isArtifactRequested(_inputsAndSettings.outputSelection, file, name, "evm.gasEstimates", wildcardMatchesExperimental))
+				evmData["gasEstimates"] = compilerStack.gasEstimates(contractName);
+
+			if (compilationSuccess && isArtifactRequested(
+				_inputsAndSettings.outputSelection,
+				file,
+				name,
+				evmObjectComponents("bytecode"),
+				wildcardMatchesExperimental
+			))
+				evmData["bytecode"] = collectEVMObject(
+					_inputsAndSettings.evmVersion,
+					compilerStack.object(contractName),
+					compilerStack.sourceMapping(contractName),
+					compilerStack.generatedSources(contractName),
+					false,
+					[&](std::string const& _element) { return isArtifactRequested(
+						_inputsAndSettings.outputSelection,
+						file,
+						name,
+						"evm.bytecode." + _element,
+						wildcardMatchesExperimental
+					); }
+				);
+
+			if (compilationSuccess && isArtifactRequested(
+				_inputsAndSettings.outputSelection,
+				file,
+				name,
+				evmObjectComponents("deployedBytecode"),
+				wildcardMatchesExperimental
+			))
+				evmData["deployedBytecode"] = collectEVMObject(
+					_inputsAndSettings.evmVersion,
+					compilerStack.runtimeObject(contractName),
+					compilerStack.runtimeSourceMapping(contractName),
+					compilerStack.generatedSources(contractName, true),
+					true,
+					[&](std::string const& _element) { return isArtifactRequested(
+						_inputsAndSettings.outputSelection,
+						file,
+						name,
+						"evm.deployedBytecode." + _element,
+						wildcardMatchesExperimental
+					); }
+				);
+
+			if (!evmData.empty())
+				contractData["evm"] = evmData;
+
+			if (!contractData.empty())
+			{
+				if (!contractsOutput.contains(file))
+					contractsOutput[file] = Json::object();
+				contractsOutput[file][name] = contractData;
+			}
+		}
+		catch (UnimplementedFeatureError const& _unimplementedError)
+		{
+			errors.emplace_back(formatErrorWithException(
+				compilerStack,
+				_unimplementedError,
+				Error::Type::UnimplementedFeatureError,
+				"general",
+				"Unimplemented feature (" + _unimplementedError.lineInfo() + ")"
+			));
 		}
 	}
+	if (errors.size() > 0)
+		output["errors"] = std::move(errors);
 	if (!contractsOutput.empty())
 		output["contracts"] = contractsOutput;
 
