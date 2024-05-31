@@ -6,4 +6,6 @@ contract C {
     function () internal transient internal fiti;
     function () internal internal transient fiit;
 }
+// ====
+// stopAfter: analysis
 // ----

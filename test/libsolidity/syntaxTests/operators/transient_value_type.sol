@@ -6,4 +6,6 @@ contract C {
         return (x + w) * (y / x);
     }
 }
+// ====
+// stopAfter: parsing
 // ----

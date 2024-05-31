@@ -1497,6 +1497,11 @@ void CompilerStack::compileContract(
 	solUnimplementedAssert(!m_eofVersion.has_value(), "Experimental EOF support is only available for via-IR compilation.");
 	solAssert(m_stackState >= AnalysisSuccessful, "");
 
+	solUnimplementedAssert(ranges::all_of(
+		_contract.stateVariables(),
+		[](auto const* _stateVar) { return _stateVar->referenceLocation() != VariableDeclaration::Location::Transient; }
+	));
+
 	if (_otherCompilers.count(&_contract))
 		return;
 
@@ -1525,6 +1530,11 @@ void CompilerStack::compileContract(
 void CompilerStack::generateIR(ContractDefinition const& _contract)
 {
 	solAssert(m_stackState >= AnalysisSuccessful, "");
+
+	solUnimplementedAssert(ranges::all_of(
+		_contract.stateVariables(),
+		[](auto const* _stateVar) { return _stateVar->referenceLocation() != VariableDeclaration::Location::Transient; }
+	));
 
 	Contract& compiledContract = m_contracts.at(_contract.fullyQualifiedName());
 	if (!compiledContract.yulIR.empty())
@@ -1608,6 +1618,11 @@ void CompilerStack::generateIR(ContractDefinition const& _contract)
 void CompilerStack::generateEVMFromIR(ContractDefinition const& _contract)
 {
 	solAssert(m_stackState >= AnalysisSuccessful, "");
+
+	solUnimplementedAssert(ranges::all_of(
+		_contract.stateVariables(),
+		[](auto const* _stateVar) { return _stateVar->referenceLocation() != VariableDeclaration::Location::Transient; }
+	));
 
 	if (!_contract.canBeDeployed())
 		return;

@@ -8,5 +8,7 @@ contract C {
 	S transient s;
 	mapping(uint => uint) transient y;
 }
+// ====
+// stopAfter: analysis
 // ----
 // UnimplementedFeatureError: Transient data location is only supported for value types.

@@ -5,4 +5,6 @@ contract C {
 	address transient a = address(0xABC);
 	bool transient b = x > 0 ? false : true;
 }
+// ====
+// stopAfter: parsing
 // ----

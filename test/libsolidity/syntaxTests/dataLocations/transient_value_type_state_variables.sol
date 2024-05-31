@@ -7,4 +7,6 @@ contract C {
 	uint transient x;
 	bytes32 transient y;
 }
+// ====
+// stopAfter: parsing
 // ----

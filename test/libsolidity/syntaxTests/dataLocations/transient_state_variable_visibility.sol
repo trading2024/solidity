@@ -7,4 +7,6 @@ contract C {
     uint transient internal ti;
     uint transient private tprv;
 }
+// ====
+// stopAfter: parsing
 // ----
