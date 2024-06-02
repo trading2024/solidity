@@ -990,6 +990,8 @@ bool ExpressionCompiler::visit(FunctionCall const& _functionCall)
 		}
 		case FunctionType::Kind::Error:
 		{
+			// This case is part of the ``revert Error()`` path of the codegen.
+			// For ``require(bool, Error()`` refer to the ``Kind::Require`` case.
 			_functionCall.expression().accept(*this);
 			std::vector<Type const*> argumentTypes;
 			for (ASTPointer<Expression const> const& arg: _functionCall.sortedArguments())
@@ -1249,7 +1251,7 @@ bool ExpressionCompiler::visit(FunctionCall const& _functionCall)
 		case FunctionType::Kind::Require:
 		{
 			acceptAndConvert(*arguments.front(), *function.parameterTypes().front(), false);
-
+			// stack: <condition>
 			bool haveReasonString = arguments.size() > 1 && m_context.revertStrings() != RevertStrings::Strip;
 
 			if (arguments.size() > 1)
@@ -1263,7 +1265,41 @@ bool ExpressionCompiler::visit(FunctionCall const& _functionCall)
 				// as require with custom errors is not supported in legacy codegen.
 				auto const* magicType = dynamic_cast<MagicType const*>(arguments[1]->annotation().type);
 				if (magicType && magicType->kind() == MagicType::Kind::Error)
-					solUnimplemented("Require with a custom error is only available using the via-ir pipeline.");
+				{
+					// Make sure that error constructor arguments are evaluated regardless of the require condition
+					auto const& errorConstructorCall = dynamic_cast<FunctionCall const&>(*arguments[1]);
+					errorConstructorCall.expression().accept(*this);
+					std::vector<Type const*> errorConstructorArgumentTypes{};
+					unsigned stackDepth = 0;
+					for (ASTPointer<Expression const> const& errorConstructorArgument: errorConstructorCall.sortedArguments())
+					{
+						errorConstructorArgument->accept(*this);
+						stackDepth += errorConstructorArgument->annotation().type->sizeOnStack();
+						errorConstructorArgumentTypes.push_back(errorConstructorArgument->annotation().type);
+					}
+					// stack: <condition> <arg0> <arg1> ... <argN>
+					// Move condition to the top of the stack
+					utils().moveIntoStack(arguments.at(0)->annotation().type->sizeOnStack(), stackDepth);
+					// stack: <arg0> <arg1> ... <argN> <condition>
+					m_context << Instruction::ISZERO << Instruction::ISZERO;
+					AssemblyItem successBranchTag = m_context.appendConditionalJump();
+
+					auto const* errorDefinition = dynamic_cast<ErrorDefinition const*>(ASTNode::referencedDeclaration(errorConstructorCall.expression()));
+					solAssert(errorDefinition && errorDefinition->functionType(true));
+
+					utils().revertWithError(
+						errorDefinition->functionType(true)->externalSignature(),
+						errorDefinition->functionType(true)->parameterTypes(),
+						errorConstructorArgumentTypes
+					);
+					// Here, the argument is consumed, but in the other branch, it is still there.
+					m_context.adjustStackOffset(static_cast<int>(stackDepth));
+					m_context << successBranchTag;
+					// In case of the success branch i.e. require(true, ...), pop error constructor arguments
+					for (ASTPointer<Expression const> const& arg: errorConstructorCall.sortedArguments())
+						utils().popStackElement(*arg->annotation().type);
+					break;
+				}
 
 				if (m_context.revertStrings() == RevertStrings::Strip)
 				{
