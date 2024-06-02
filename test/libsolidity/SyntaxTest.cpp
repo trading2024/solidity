@@ -80,34 +80,22 @@ void SyntaxTest::setupCompiler(CompilerStack& _compiler)
 
 void SyntaxTest::parseAndAnalyze()
 {
-	try
+
+	runFramework(withPreamble(m_sources.sources), m_stopAfter);
+	if (!pipelineSuccessful() && stageSuccessful(PipelineStage::Analysis) && !compiler().isExperimentalAnalysis())
 	{
-		runFramework(withPreamble(m_sources.sources), m_stopAfter);
-		if (!pipelineSuccessful() && stageSuccessful(PipelineStage::Analysis) && !compiler().isExperimentalAnalysis())
-		{
-			ErrorList const& errors = compiler().errors();
-			auto codeGeneretionErrorCount = count_if(errors.cbegin(), errors.cend(), [](auto const& error) {
-				return error->type() == Error::Type::CodeGenerationError;
-			});
-			auto errorCount = count_if(errors.cbegin(), errors.cend(), [](auto const& error) {
-				return Error::isError(error->type());
-			});
-			// failing compilation after successful analysis is a rare case,
-			// it assumes that errors contain exactly one error, and the error is of type Error::Type::CodeGenerationError
-			if (codeGeneretionErrorCount != 1 || errorCount != 1)
-				BOOST_THROW_EXCEPTION(std::runtime_error("Compilation failed even though analysis was successful."));
-		}
-	}
-	catch (UnimplementedFeatureError const& _e)
-	{
-		m_errorList.emplace_back(SyntaxTestError{
-			Error::Type::UnimplementedFeatureError,
-			std::nullopt,
-			errorMessage(_e),
-			"",
-			-1,
-			-1
+		ErrorList const& errors = compiler().errors();
+
+		auto allowedErrorCount = count_if(errors.cbegin(), errors.cend(), [](auto const& error) {
+			return error->type() == Error::Type::CodeGenerationError || error->type() == Error::Type::UnimplementedFeatureError;
 		});
+		auto errorCount = count_if(errors.cbegin(), errors.cend(), [](auto const& error) {
+			return Error::isError(error->type());
+		});
+		// failing compilation after successful analysis is a rare case,
+		// it assumes that errors contain exactly one error, and the error is either of type Error::Type::CodeGenerationError or Error::Type::UnimplementedFeatureError
+		if (allowedErrorCount != 1 || errorCount != 1)
+			BOOST_THROW_EXCEPTION(std::runtime_error("Compilation failed even though analysis was successful."));
 	}
 
 	filterObtainedErrors();
