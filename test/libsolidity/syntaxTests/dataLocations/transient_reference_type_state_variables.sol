@@ -11,4 +11,4 @@ contract C {
 // ====
 // stopAfter: analysis
 // ----
-// UnimplementedFeatureError: Transient data location is only supported for value types.
+// UnimplementedFeatureError 7621: Transient data location is only supported for value types.
