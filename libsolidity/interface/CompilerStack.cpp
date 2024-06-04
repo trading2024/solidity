@@ -372,7 +372,26 @@ bool CompilerStack::parse()
 	{
 		std::string const& path = sourcesToParse[i];
 		Source& source = m_sources[path];
-		source.ast = parser.parse(*source.charStream);
+		try
+		{
+			source.ast = parser.parse(*source.charStream);
+		}
+		catch (UnimplementedFeatureError const& _unimplementedError)
+		{
+			SourceLocation errorSourceLocation{};
+			if (
+				SourceLocation const* sourceLocation =
+				boost::get_error_info<langutil::errinfo_sourceLocation>(_unimplementedError)
+			)
+				errorSourceLocation = *sourceLocation;
+
+			std::string const* comment = _unimplementedError.comment();
+			m_errorReporter.unimplementedFeatureError(
+				7053_error,
+				errorSourceLocation,
+				(comment && !comment->empty()) ? *comment : ""
+			);
+		}
 		if (!source.ast)
 			solAssert(Error::containsErrors(m_errorReporter.errors()), "Parser returned null but did not report error.");
 		else
@@ -511,6 +530,23 @@ bool CompilerStack::analyze()
 	{
 		if (m_errorReporter.errors().empty())
 			throw; // Something is weird here, rather throw again.
+		noErrors = false;
+	}
+	catch (UnimplementedFeatureError const& _unimplementedError)
+	{
+		SourceLocation errorSourceLocation{};
+		if (
+			SourceLocation const* sourceLocation =
+			boost::get_error_info<langutil::errinfo_sourceLocation>(_unimplementedError)
+		)
+			errorSourceLocation = *sourceLocation;
+
+		std::string const* comment = _unimplementedError.comment();
+		m_errorReporter.unimplementedFeatureError(
+			7621_error,
+			errorSourceLocation,
+			(comment && !comment->empty()) ? *comment : ""
+		);
 		noErrors = false;
 	}
 
@@ -687,32 +723,12 @@ bool CompilerStack::parseAndAnalyze(State _stopAfter)
 {
 	m_stopAfter = _stopAfter;
 
-	try
-	{
-		bool success = parse();
-		if (m_stackState >= m_stopAfter)
-			return success;
-		if (success)
-			success = analyze();
+	bool success = parse();
+	if (m_stackState >= m_stopAfter)
 		return success;
-	}
-	catch (UnimplementedFeatureError const& _unimplementedError)
-	{
-		SourceLocation errorSourceLocation{};
-		if (
-			SourceLocation const* sourceLocation =
-			boost::get_error_info<langutil::errinfo_sourceLocation>(_unimplementedError)
-		)
-			errorSourceLocation = *sourceLocation;
-
-		std::string const* comment = _unimplementedError.comment();
-		m_errorReporter.unimplementedFeatureError(
-			7053_error,
-			errorSourceLocation,
-			(comment && !comment->empty()) ? *comment : ""
-		);
-		return false;
-	}
+	if (success)
+		success = analyze();
+	return success;
 }
 
 bool CompilerStack::isRequestedSource(std::string const& _sourceName) const
