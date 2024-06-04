@@ -2,18 +2,17 @@
     "errors": [
         {
             "component": "general",
-            "formattedMessage": "Internal exception in StandardCompiler::compile: /solidity/libsolidity/interface/StorageLayout.cpp(49): Throw in function solidity::Json solidity::frontend::StorageLayout::generate(const solidity::frontend::VariableDeclaration&, const solidity::u256&, unsigned int)
-Dynamic exception type: boost::wrapexcept<solidity::langutil::UnimplementedFeatureError>
-std::exception::what: Unimplemented feature
-[solidity::util::tag_comment*] = Unimplemented feature
+            "formattedMessage": "UnimplementedFeatureError: Transient storage layout is not supported yet.
+
 ",
-            "message": "Internal exception in StandardCompiler::compile: /solidity/libsolidity/interface/StorageLayout.cpp(49): Throw in function solidity::Json solidity::frontend::StorageLayout::generate(const solidity::frontend::VariableDeclaration&, const solidity::u256&, unsigned int)
-Dynamic exception type: boost::wrapexcept<solidity::langutil::UnimplementedFeatureError>
-std::exception::what: Unimplemented feature
-[solidity::util::tag_comment*] = Unimplemented feature
-",
+            "message": "Unimplemented feature (/solidity/libsolidity/interface/StorageLayout.cpp:49):Transient storage layout is not supported yet.",
             "severity": "error",
-            "type": "InternalCompilerError"
+            "type": "UnimplementedFeatureError"
         }
-    ]
+    ],
+    "sources": {
+        "fileA": {
+            "id": 0
+        }
+    }
 }
