@@ -64,8 +64,7 @@ std::shared_ptr<Object> ObjectParser::parse(std::shared_ptr<Scanner> const& _sca
 	}
 	catch (FatalError const&)
 	{
-		if (m_errorReporter.errors().empty())
-			throw; // Something is weird here, rather throw again.
+		yulAssert(!m_errorReporter.errors().empty());
 	}
 	return nullptr;
 }

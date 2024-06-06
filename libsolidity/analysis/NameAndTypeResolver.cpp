@@ -62,8 +62,7 @@ bool NameAndTypeResolver::registerDeclarations(SourceUnit& _sourceUnit, ASTNode 
 	}
 	catch (langutil::FatalError const&)
 	{
-		if (m_errorReporter.errors().empty())
-			throw; // Something is weird here, rather throw again.
+		solAssert(!m_errorReporter.errors().empty());
 		return false;
 	}
 	return true;
@@ -137,8 +136,7 @@ bool NameAndTypeResolver::resolveNamesAndTypes(SourceUnit& _source)
 	}
 	catch (langutil::FatalError const&)
 	{
-		if (m_errorReporter.errors().empty())
-			throw; // Something is weird here, rather throw again.
+		solAssert(!m_errorReporter.errors().empty());
 		return false;
 	}
 	return true;
@@ -153,8 +151,7 @@ bool NameAndTypeResolver::updateDeclaration(Declaration const& _declaration)
 	}
 	catch (langutil::FatalError const&)
 	{
-		if (m_errorReporter.errors().empty())
-			throw; // Something is weird here, rather throw again.
+		solAssert(!m_errorReporter.errors().empty());
 		return false;
 	}
 	return true;
