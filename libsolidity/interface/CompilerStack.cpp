@@ -378,19 +378,7 @@ bool CompilerStack::parse()
 		}
 		catch (UnimplementedFeatureError const& _unimplementedError)
 		{
-			SourceLocation errorSourceLocation{};
-			if (
-				SourceLocation const* sourceLocation =
-				boost::get_error_info<langutil::errinfo_sourceLocation>(_unimplementedError)
-			)
-				errorSourceLocation = *sourceLocation;
-
-			std::string const* comment = _unimplementedError.comment();
-			m_errorReporter.unimplementedFeatureError(
-				7053_error,
-				errorSourceLocation,
-				(comment && !comment->empty()) ? *comment : ""
-			);
+			formatUnimplementedFeatureError(_unimplementedError);
 		}
 		if (!source.ast)
 			solAssert(Error::containsErrors(m_errorReporter.errors()), "Parser returned null but did not report error.");
@@ -534,19 +522,7 @@ bool CompilerStack::analyze()
 	}
 	catch (UnimplementedFeatureError const& _unimplementedError)
 	{
-		SourceLocation errorSourceLocation{};
-		if (
-			SourceLocation const* sourceLocation =
-			boost::get_error_info<langutil::errinfo_sourceLocation>(_unimplementedError)
-		)
-			errorSourceLocation = *sourceLocation;
-
-		std::string const* comment = _unimplementedError.comment();
-		m_errorReporter.unimplementedFeatureError(
-			7621_error,
-			errorSourceLocation,
-			(comment && !comment->empty()) ? *comment : ""
-		);
+		formatUnimplementedFeatureError(_unimplementedError);
 		noErrors = false;
 	}
 
@@ -799,19 +775,7 @@ bool CompilerStack::compile(State _stopAfter)
 					}
 					catch (UnimplementedFeatureError const& _unimplementedError)
 					{
-						SourceLocation errorSourceLocation{};
-						if (
-							SourceLocation const* sourceLocation =
-							boost::get_error_info<langutil::errinfo_sourceLocation>(_unimplementedError)
-						)
-							errorSourceLocation = *sourceLocation;
-
-						std::string const* comment = _unimplementedError.comment();
-						m_errorReporter.unimplementedFeatureError(
-							1834_error,
-							errorSourceLocation,
-							(comment && !comment->empty()) ? *comment : ""
-						);
+						formatUnimplementedFeatureError(_unimplementedError);
 						return false;
 					}
 				}
@@ -2026,4 +1990,21 @@ experimental::Analysis const& CompilerStack::experimentalAnalysis() const
 {
 	solAssert(!!m_experimentalAnalysis);
 	return *m_experimentalAnalysis;
+}
+
+void CompilerStack::formatUnimplementedFeatureError(UnimplementedFeatureError const& _unimplementedError)
+{
+	SourceLocation errorSourceLocation{};
+	if (
+		SourceLocation const* sourceLocation =
+		boost::get_error_info<langutil::errinfo_sourceLocation>(_unimplementedError)
+	)
+		errorSourceLocation = *sourceLocation;
+
+	std::string const* comment = _unimplementedError.comment();
+	m_errorReporter.unimplementedFeatureError(
+		1834_error,
+		errorSourceLocation,
+		(comment && !comment->empty()) ? *comment : ""
+	);
 }
