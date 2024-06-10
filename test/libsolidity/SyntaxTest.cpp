@@ -24,6 +24,7 @@
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/test/unit_test.hpp>
 #include <boost/throw_exception.hpp>
+#include <range/v3/algorithm/find_if.hpp>
 #include <fstream>
 #include <memory>
 #include <stdexcept>
@@ -85,17 +86,22 @@ void SyntaxTest::parseAndAnalyze()
 	if (!pipelineSuccessful() && stageSuccessful(PipelineStage::Analysis) && !compiler().isExperimentalAnalysis())
 	{
 		ErrorList const& errors = compiler().errors();
-
-		auto allowedErrorCount = count_if(errors.cbegin(), errors.cend(), [](auto const& error) {
-			return error->type() == Error::Type::CodeGenerationError || error->type() == Error::Type::UnimplementedFeatureError;
-		});
-		auto errorCount = count_if(errors.cbegin(), errors.cend(), [](auto const& error) {
-			return Error::isError(error->type());
-		});
 		// failing compilation after successful analysis is a rare case,
-		// it assumes that errors contain exactly one error, and the error is either of type Error::Type::CodeGenerationError or Error::Type::UnimplementedFeatureError
-		if (allowedErrorCount != 1 || errorCount != 1)
-			BOOST_THROW_EXCEPTION(std::runtime_error("Compilation failed even though analysis was successful."));
+		// it assumes that errors are either of type Error::Type::CodeGenerationError or Error::Type::UnimplementedFeatureError
+		if (
+			auto const error = ranges::find_if(errors, [](auto const& _error) {
+				return
+					Error::isError(_error->type()) &&
+					_error->type() != Error::Type::CodeGenerationError &&
+					_error->type() != Error::Type::UnimplementedFeatureError
+				;
+			});
+			error != ranges::end(errors)
+		)
+			BOOST_THROW_EXCEPTION(std::runtime_error(
+				"Unexpected " + Error::formatErrorType(error->get()->type()) + " at compilation stage."
+				" This error should NOT be encoded as expectation and should be fixed instead."
+			));
 	}
 
 	filterObtainedErrors();
