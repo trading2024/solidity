@@ -691,6 +691,15 @@ bool CommandLineInterface::run(int _argc, char const* const* _argv)
 
 		return false;
 	}
+	catch (UnimplementedFeatureError const& _unimplementedError)
+	{
+		std::string const* comment = _unimplementedError.comment();
+		report(
+			Error::Severity::Error,
+			(comment && !comment->empty()? *comment : "Unimplemented Feature Error")
+		);
+		return false;
+	}
 }
 
 bool CommandLineInterface::parseArguments(int _argc, char const* const* _argv)
