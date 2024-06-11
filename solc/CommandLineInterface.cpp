@@ -1284,54 +1284,41 @@ void CommandLineInterface::outputCompilationResults()
 {
 	solAssert(CompilerInputModes.count(m_options.input.mode) == 1);
 
-	try
+	handleCombinedJSON();
+
+	// do we need AST output?
+	handleAst();
+
+	CompilerOutputs astOutputSelection;
+	astOutputSelection.astCompactJson = true;
+	if (m_options.compiler.outputs != CompilerOutputs() && m_options.compiler.outputs != astOutputSelection)
 	{
-		handleCombinedJSON();
+		// Currently AST is the only output allowed with --stop-after parsing. For all of the others
+		// we can safely assume that full compilation was performed and successful.
+		solAssert(m_options.output.stopAfter >= CompilerStack::State::CompilationSuccessful);
 
-		// do we need AST output?
-		handleAst();
-
-		CompilerOutputs astOutputSelection;
-		astOutputSelection.astCompactJson = true;
-		if (m_options.compiler.outputs != CompilerOutputs() && m_options.compiler.outputs != astOutputSelection)
+		for (std::string const& contract: m_compiler->contractNames())
 		{
-			// Currently AST is the only output allowed with --stop-after parsing. For all of the others
-			// we can safely assume that full compilation was performed and successful.
-			solAssert(m_options.output.stopAfter >= CompilerStack::State::CompilationSuccessful);
+			if (needsHumanTargetedStdout(m_options))
+				sout() << std::endl << "======= " << contract << " =======" << std::endl;
 
-			for (std::string const& contract: m_compiler->contractNames())
-			{
-				if (needsHumanTargetedStdout(m_options))
-					sout() << std::endl << "======= " << contract << " =======" << std::endl;
+			handleEVMAssembly(contract);
 
-				handleEVMAssembly(contract);
+			if (m_options.compiler.estimateGas)
+				handleGasEstimation(contract);
 
-				if (m_options.compiler.estimateGas)
-					handleGasEstimation(contract);
-
-				handleBytecode(contract);
-				handleIR(contract);
-				handleIRAst(contract);
-				handleIROptimized(contract);
-				handleIROptimizedAst(contract);
-				handleSignatureHashes(contract);
-				handleMetadata(contract);
-				handleABI(contract);
-				handleStorageLayout(contract);
-				handleNatspec(true, contract);
-				handleNatspec(false, contract);
-			} // end of contracts iteration
-		}
-	}
-	catch (UnimplementedFeatureError const& _unimplementedError)
-	{
-		SourceReferenceFormatter formatter(serr(false), *m_compiler, coloredOutput(m_options), m_options.formatting.withErrorIds);
-		m_hasOutput = true;
-		formatter.printExceptionInformation(
-			_unimplementedError,
-			Error::errorSeverity(Error::Type::UnimplementedFeatureError)
-		);
-		solThrow(CommandLineExecutionError, "");
+			handleBytecode(contract);
+			handleIR(contract);
+			handleIRAst(contract);
+			handleIROptimized(contract);
+			handleIROptimizedAst(contract);
+			handleSignatureHashes(contract);
+			handleMetadata(contract);
+			handleABI(contract);
+			handleStorageLayout(contract);
+			handleNatspec(true, contract);
+			handleNatspec(false, contract);
+		} // end of contracts iteration
 	}
 
 	if (!m_hasOutput)
