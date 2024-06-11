@@ -1,7 +1,7 @@
 ### 0.8.27 (unreleased)
 
 Language Features:
-
+ * Introduce a new overload ``require(bool, Error)`` that allows usage of ``require`` functions with custom errors. This feature is now available in both the legacy and the via IR pipelines.
 
 Compiler Features:
  * EVM: Support for the EVM version "Prague".
