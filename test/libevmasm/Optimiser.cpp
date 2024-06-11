@@ -1011,6 +1011,7 @@ BOOST_AUTO_TEST_CASE(clear_unreachable_code)
 BOOST_AUTO_TEST_CASE(deduplicateNextTagBlockSize3)
 {
 	AssemblyItems items{
+		Instruction::JUMP,
 		u256(0),
 		u256(1),
 		Instruction::REVERT,
@@ -1021,6 +1022,7 @@ BOOST_AUTO_TEST_CASE(deduplicateNextTagBlockSize3)
 	};
 
 	AssemblyItems expectation{
+		Instruction::JUMP,
 		AssemblyItem(Tag, 2),
 		u256(0),
 		u256(1),
@@ -1037,6 +1039,7 @@ BOOST_AUTO_TEST_CASE(deduplicateNextTagBlockSize3)
 BOOST_AUTO_TEST_CASE(deduplicateNextTagBlockSize2)
 {
 	AssemblyItems items{
+		Instruction::JUMP,
 		u256(0),
 		Instruction::SELFDESTRUCT,
 		AssemblyItem(Tag, 2),
@@ -1045,6 +1048,7 @@ BOOST_AUTO_TEST_CASE(deduplicateNextTagBlockSize2)
 	};
 
 	AssemblyItems expectation{
+		Instruction::JUMP,
 		AssemblyItem(Tag, 2),
 		u256(0),
 		Instruction::SELFDESTRUCT
@@ -1060,12 +1064,14 @@ BOOST_AUTO_TEST_CASE(deduplicateNextTagBlockSize2)
 BOOST_AUTO_TEST_CASE(deduplicateNextTagBlockSize1)
 {
 	AssemblyItems items{
+		Instruction::JUMP,
 		Instruction::STOP,
 		AssemblyItem(Tag, 2),
 		Instruction::STOP
 	};
 
 	AssemblyItems expectation{
+		Instruction::JUMP,
 		AssemblyItem(Tag, 2),
 		Instruction::STOP
 	};

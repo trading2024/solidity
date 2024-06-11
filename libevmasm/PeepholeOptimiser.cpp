@@ -501,6 +501,7 @@ struct UnreachableCode
 struct DeduplicateNextTagSize3 : SimplePeepholeOptimizerMethod<DeduplicateNextTagSize3>
 {
 	static bool applySimple(
+		AssemblyItem const& _precedingItem,
 		AssemblyItem const& _itemA,
 		AssemblyItem const& _itemB,
 		AssemblyItem const& _breakingItem,
@@ -512,16 +513,15 @@ struct DeduplicateNextTagSize3 : SimplePeepholeOptimizerMethod<DeduplicateNextTa
 	)
 	{
 		if (
+			_precedingItem.type() != Tag &&
 			_itemA == _itemC &&
 			_itemB == _itemD &&
 			_breakingItem == _breakingItem2 &&
 			_tag.type() == Tag &&
-			(
-				_breakingItem == Instruction::JUMP ||
-				SemanticInformation::terminatesControlFlow(_breakingItem)
-			)
+			SemanticInformation::terminatesControlFlow(_breakingItem)
 		)
 		{
+			*_out = _precedingItem;
 			*_out = _tag;
 			*_out = _itemC;
 			*_out = _itemD;
@@ -536,6 +536,7 @@ struct DeduplicateNextTagSize3 : SimplePeepholeOptimizerMethod<DeduplicateNextTa
 struct DeduplicateNextTagSize2 : SimplePeepholeOptimizerMethod<DeduplicateNextTagSize2>
 {
 	static bool applySimple(
+		AssemblyItem const& _precedingItem,
 		AssemblyItem const& _itemA,
 		AssemblyItem const& _breakingItem,
 		AssemblyItem const& _tag,
@@ -545,15 +546,14 @@ struct DeduplicateNextTagSize2 : SimplePeepholeOptimizerMethod<DeduplicateNextTa
 	)
 	{
 		if (
+			_precedingItem.type() != Tag &&
 			_itemA == _itemC &&
 			_breakingItem == _breakingItem2 &&
 			_tag.type() == Tag &&
-			(
-				_breakingItem == Instruction::JUMP ||
-				SemanticInformation::terminatesControlFlow(_breakingItem)
-			)
+			SemanticInformation::terminatesControlFlow(_breakingItem)
 		)
 		{
+			*_out = _precedingItem;
 			*_out = _tag;
 			*_out = _itemC;
 			*_out = _breakingItem2;
@@ -567,6 +567,7 @@ struct DeduplicateNextTagSize2 : SimplePeepholeOptimizerMethod<DeduplicateNextTa
 struct DeduplicateNextTagSize1 : SimplePeepholeOptimizerMethod<DeduplicateNextTagSize1>
 {
 	static bool applySimple(
+		AssemblyItem const& _precedingItem,
 		AssemblyItem const& _breakingItem,
 		AssemblyItem const& _tag,
 		AssemblyItem const& _breakingItem2,
@@ -574,14 +575,13 @@ struct DeduplicateNextTagSize1 : SimplePeepholeOptimizerMethod<DeduplicateNextTa
 	)
 	{
 		if (
+			_precedingItem.type() != Tag &&
 			_breakingItem == _breakingItem2 &&
 			_tag.type() == Tag &&
-			(
-				_breakingItem == Instruction::JUMP ||
-				SemanticInformation::terminatesControlFlow(_breakingItem)
-			)
+			SemanticInformation::terminatesControlFlow(_breakingItem)
 		)
 		{
+			*_out = _precedingItem;
 			*_out = _tag;
 			*_out = _breakingItem2;
 			return true;
